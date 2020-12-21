@@ -37,7 +37,8 @@ void pstrcpy(char *buf, int buf_size, const char *str)
     if (buf_size <= 0)
         return;
 
-    for(;;) {
+    for (;;)
+    {
         c = *str++;
         if (c == 0 || q >= buf + buf_size - 1)
             break;
@@ -61,7 +62,8 @@ int strstart(const char *str, const char *val, const char **ptr)
     const char *p, *q;
     p = str;
     q = val;
-    while (*q != '\0') {
+    while (*q != '\0')
+    {
         if (*p != *q)
             return 0;
         p++;
@@ -105,14 +107,16 @@ int dbuf_realloc(DynBuf *s, size_t new_size)
 {
     size_t size;
     uint8_t *new_buf;
-    if (new_size > s->allocated_size) {
+    if (new_size > s->allocated_size)
+    {
         if (s->error)
             return -1;
         size = s->allocated_size * 3 / 2;
         if (size > new_size)
             new_size = size;
         new_buf = s->realloc_func(s->opaque, s->buf, new_size);
-        if (!new_buf) {
+        if (!new_buf)
+        {
             s->error = TRUE;
             return -1;
         }
@@ -136,7 +140,8 @@ int dbuf_write(DynBuf *s, size_t offset, const uint8_t *data, size_t len)
 
 int dbuf_put(DynBuf *s, const uint8_t *data, size_t len)
 {
-    if (unlikely((s->size + len) > s->allocated_size)) {
+    if (unlikely((s->size + len) > s->allocated_size))
+    {
         if (dbuf_realloc(s, s->size + len))
             return -1;
     }
@@ -147,7 +152,8 @@ int dbuf_put(DynBuf *s, const uint8_t *data, size_t len)
 
 int dbuf_put_self(DynBuf *s, size_t offset, size_t len)
 {
-    if (unlikely((s->size + len) > s->allocated_size)) {
+    if (unlikely((s->size + len) > s->allocated_size))
+    {
         if (dbuf_realloc(s, s->size + len))
             return -1;
     }
@@ -172,14 +178,17 @@ int __attribute__((format(printf, 2, 3))) dbuf_printf(DynBuf *s,
     va_list ap;
     char buf[128];
     int len;
-    
+
     va_start(ap, fmt);
     len = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    if (len < sizeof(buf)) {
+    if (len < sizeof(buf))
+    {
         /* fast case */
         return dbuf_put(s, (uint8_t *)buf, len);
-    } else {
+    }
+    else
+    {
         if (dbuf_realloc(s, s->size + len + 1))
             return -1;
         va_start(ap, fmt);
@@ -195,7 +204,8 @@ void dbuf_free(DynBuf *s)
 {
     /* we test s->buf as a fail safe to avoid crashing if dbuf_free()
        is called twice */
-    if (s->buf) {
+    if (s->buf)
+    {
         s->realloc_func(s->opaque, s->buf, 0);
     }
     memset(s, 0, sizeof(*s));
@@ -207,24 +217,41 @@ int unicode_to_utf8(uint8_t *buf, unsigned int c)
 {
     uint8_t *q = buf;
 
-    if (c < 0x80) {
+    if (c < 0x80)
+    {
         *q++ = c;
-    } else {
-        if (c < 0x800) {
+    }
+    else
+    {
+        if (c < 0x800)
+        {
             *q++ = (c >> 6) | 0xc0;
-        } else {
-            if (c < 0x10000) {
+        }
+        else
+        {
+            if (c < 0x10000)
+            {
                 *q++ = (c >> 12) | 0xe0;
-            } else {
-                if (c < 0x00200000) {
+            }
+            else
+            {
+                if (c < 0x00200000)
+                {
                     *q++ = (c >> 18) | 0xf0;
-                } else {
-                    if (c < 0x04000000) {
+                }
+                else
+                {
+                    if (c < 0x04000000)
+                    {
                         *q++ = (c >> 24) | 0xf8;
-                    } else if (c < 0x80000000) {
+                    }
+                    else if (c < 0x80000000)
+                    {
                         *q++ = (c >> 30) | 0xfc;
                         *q++ = ((c >> 24) & 0x3f) | 0x80;
-                    } else {
+                    }
+                    else
+                    {
                         return 0;
                     }
                     *q++ = ((c >> 18) & 0x3f) | 0x80;
@@ -239,11 +266,19 @@ int unicode_to_utf8(uint8_t *buf, unsigned int c)
 }
 
 static const unsigned int utf8_min_code[5] = {
-    0x80, 0x800, 0x10000, 0x00200000, 0x04000000,
+    0x80,
+    0x800,
+    0x10000,
+    0x00200000,
+    0x04000000,
 };
 
 static const unsigned char utf8_first_code_mask[5] = {
-    0x1f, 0xf, 0x7, 0x3, 0x1,
+    0x1f,
+    0xf,
+    0x7,
+    0x3,
+    0x1,
 };
 
 /* return -1 if error. *pp is not updated in this case. max_len must
@@ -253,35 +288,83 @@ int unicode_from_utf8(const uint8_t *p, int max_len, const uint8_t **pp)
     int l, c, b, i;
 
     c = *p++;
-    if (c < 0x80) {
+    if (c < 0x80)
+    {
         *pp = p;
         return c;
     }
-    switch(c) {
-    case 0xc0: case 0xc1: case 0xc2: case 0xc3:
-    case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-    case 0xc8: case 0xc9: case 0xca: case 0xcb:
-    case 0xcc: case 0xcd: case 0xce: case 0xcf:
-    case 0xd0: case 0xd1: case 0xd2: case 0xd3:
-    case 0xd4: case 0xd5: case 0xd6: case 0xd7:
-    case 0xd8: case 0xd9: case 0xda: case 0xdb:
-    case 0xdc: case 0xdd: case 0xde: case 0xdf:
+    switch (c)
+    {
+    case 0xc0:
+    case 0xc1:
+    case 0xc2:
+    case 0xc3:
+    case 0xc4:
+    case 0xc5:
+    case 0xc6:
+    case 0xc7:
+    case 0xc8:
+    case 0xc9:
+    case 0xca:
+    case 0xcb:
+    case 0xcc:
+    case 0xcd:
+    case 0xce:
+    case 0xcf:
+    case 0xd0:
+    case 0xd1:
+    case 0xd2:
+    case 0xd3:
+    case 0xd4:
+    case 0xd5:
+    case 0xd6:
+    case 0xd7:
+    case 0xd8:
+    case 0xd9:
+    case 0xda:
+    case 0xdb:
+    case 0xdc:
+    case 0xdd:
+    case 0xde:
+    case 0xdf:
         l = 1;
         break;
-    case 0xe0: case 0xe1: case 0xe2: case 0xe3:
-    case 0xe4: case 0xe5: case 0xe6: case 0xe7:
-    case 0xe8: case 0xe9: case 0xea: case 0xeb:
-    case 0xec: case 0xed: case 0xee: case 0xef:
+    case 0xe0:
+    case 0xe1:
+    case 0xe2:
+    case 0xe3:
+    case 0xe4:
+    case 0xe5:
+    case 0xe6:
+    case 0xe7:
+    case 0xe8:
+    case 0xe9:
+    case 0xea:
+    case 0xeb:
+    case 0xec:
+    case 0xed:
+    case 0xee:
+    case 0xef:
         l = 2;
         break;
-    case 0xf0: case 0xf1: case 0xf2: case 0xf3:
-    case 0xf4: case 0xf5: case 0xf6: case 0xf7:
+    case 0xf0:
+    case 0xf1:
+    case 0xf2:
+    case 0xf3:
+    case 0xf4:
+    case 0xf5:
+    case 0xf6:
+    case 0xf7:
         l = 3;
         break;
-    case 0xf8: case 0xf9: case 0xfa: case 0xfb:
+    case 0xf8:
+    case 0xf9:
+    case 0xfa:
+    case 0xfb:
         l = 4;
         break;
-    case 0xfc: case 0xfd:
+    case 0xfc:
+    case 0xfd:
         l = 5;
         break;
     default:
@@ -291,7 +374,8 @@ int unicode_from_utf8(const uint8_t *p, int max_len, const uint8_t **pp)
     if (l > (max_len - 1))
         return -1;
     c &= utf8_first_code_mask[l - 1];
-    for(i = 0; i < l; i++) {
+    for (i = 0; i < l; i++)
+    {
         b = *p++;
         if (b < 0x80 || b >= 0xc0)
             return -1;
@@ -332,18 +416,21 @@ void rqsort(void *base, size_t nmemb, size_t size,
 typedef void (*exchange_f)(void *a, void *b, size_t size);
 typedef int (*cmp_f)(const void *, const void *, void *opaque);
 
-static void exchange_bytes(void *a, void *b, size_t size) {
+static void exchange_bytes(void *a, void *b, size_t size)
+{
     uint8_t *ap = (uint8_t *)a;
     uint8_t *bp = (uint8_t *)b;
 
-    while (size-- != 0) {
+    while (size-- != 0)
+    {
         uint8_t t = *ap;
         *ap++ = *bp;
         *bp++ = t;
     }
 }
 
-static void exchange_one_byte(void *a, void *b, size_t size) {
+static void exchange_one_byte(void *a, void *b, size_t size)
+{
     uint8_t *ap = (uint8_t *)a;
     uint8_t *bp = (uint8_t *)b;
     uint8_t t = *ap;
@@ -351,18 +438,21 @@ static void exchange_one_byte(void *a, void *b, size_t size) {
     *bp = t;
 }
 
-static void exchange_int16s(void *a, void *b, size_t size) {
+static void exchange_int16s(void *a, void *b, size_t size)
+{
     uint16_t *ap = (uint16_t *)a;
     uint16_t *bp = (uint16_t *)b;
 
-    for (size /= sizeof(uint16_t); size-- != 0;) {
+    for (size /= sizeof(uint16_t); size-- != 0;)
+    {
         uint16_t t = *ap;
         *ap++ = *bp;
         *bp++ = t;
     }
 }
 
-static void exchange_one_int16(void *a, void *b, size_t size) {
+static void exchange_one_int16(void *a, void *b, size_t size)
+{
     uint16_t *ap = (uint16_t *)a;
     uint16_t *bp = (uint16_t *)b;
     uint16_t t = *ap;
@@ -370,18 +460,21 @@ static void exchange_one_int16(void *a, void *b, size_t size) {
     *bp = t;
 }
 
-static void exchange_int32s(void *a, void *b, size_t size) {
+static void exchange_int32s(void *a, void *b, size_t size)
+{
     uint32_t *ap = (uint32_t *)a;
     uint32_t *bp = (uint32_t *)b;
 
-    for (size /= sizeof(uint32_t); size-- != 0;) {
+    for (size /= sizeof(uint32_t); size-- != 0;)
+    {
         uint32_t t = *ap;
         *ap++ = *bp;
         *bp++ = t;
     }
 }
 
-static void exchange_one_int32(void *a, void *b, size_t size) {
+static void exchange_one_int32(void *a, void *b, size_t size)
+{
     uint32_t *ap = (uint32_t *)a;
     uint32_t *bp = (uint32_t *)b;
     uint32_t t = *ap;
@@ -389,18 +482,21 @@ static void exchange_one_int32(void *a, void *b, size_t size) {
     *bp = t;
 }
 
-static void exchange_int64s(void *a, void *b, size_t size) {
+static void exchange_int64s(void *a, void *b, size_t size)
+{
     uint64_t *ap = (uint64_t *)a;
     uint64_t *bp = (uint64_t *)b;
 
-    for (size /= sizeof(uint64_t); size-- != 0;) {
+    for (size /= sizeof(uint64_t); size-- != 0;)
+    {
         uint64_t t = *ap;
         *ap++ = *bp;
         *bp++ = t;
     }
 }
 
-static void exchange_one_int64(void *a, void *b, size_t size) {
+static void exchange_one_int64(void *a, void *b, size_t size)
+{
     uint64_t *ap = (uint64_t *)a;
     uint64_t *bp = (uint64_t *)b;
     uint64_t t = *ap;
@@ -408,11 +504,13 @@ static void exchange_one_int64(void *a, void *b, size_t size) {
     *bp = t;
 }
 
-static void exchange_int128s(void *a, void *b, size_t size) {
+static void exchange_int128s(void *a, void *b, size_t size)
+{
     uint64_t *ap = (uint64_t *)a;
     uint64_t *bp = (uint64_t *)b;
 
-    for (size /= sizeof(uint64_t) * 2; size-- != 0; ap += 2, bp += 2) {
+    for (size /= sizeof(uint64_t) * 2; size-- != 0; ap += 2, bp += 2)
+    {
         uint64_t t = ap[0];
         uint64_t u = ap[1];
         ap[0] = bp[0];
@@ -422,7 +520,8 @@ static void exchange_int128s(void *a, void *b, size_t size) {
     }
 }
 
-static void exchange_one_int128(void *a, void *b, size_t size) {
+static void exchange_one_int128(void *a, void *b, size_t size)
+{
     uint64_t *ap = (uint64_t *)a;
     uint64_t *bp = (uint64_t *)b;
     uint64_t t = ap[0];
@@ -433,8 +532,10 @@ static void exchange_one_int128(void *a, void *b, size_t size) {
     bp[1] = u;
 }
 
-static inline exchange_f exchange_func(const void *base, size_t size) {
-    switch (((uintptr_t)base | (uintptr_t)size) & 15) {
+static inline exchange_f exchange_func(const void *base, size_t size)
+{
+    switch (((uintptr_t)base | (uintptr_t)size) & 15)
+    {
     case 0:
         if (size == sizeof(uint64_t) * 2)
             return exchange_one_int128;
@@ -473,13 +574,16 @@ static void heapsortx(void *base, size_t nmemb, size_t size, cmp_f cmp, void *op
     size_t i, n, c, r;
     exchange_f swap = exchange_func(base, size);
 
-    if (nmemb > 1) {
+    if (nmemb > 1)
+    {
         i = (nmemb / 2) * size;
         n = nmemb * size;
 
-        while (i > 0) {
+        while (i > 0)
+        {
             i -= size;
-            for (r = i; (c = r * 2 + size) < n; r = c) {
+            for (r = i; (c = r * 2 + size) < n; r = c)
+            {
                 if (c < n - size && cmp(basep + c, basep + c + size, opaque) <= 0)
                     c += size;
                 if (cmp(basep + r, basep + c, opaque) > 0)
@@ -487,10 +591,12 @@ static void heapsortx(void *base, size_t nmemb, size_t size, cmp_f cmp, void *op
                 swap(basep + r, basep + c, size);
             }
         }
-        for (i = n - size; i > 0; i -= size) {
+        for (i = n - size; i > 0; i -= size)
+        {
             swap(basep, basep + i, size);
 
-            for (r = 0; (c = r * 2 + size) < i; r = c) {
+            for (r = 0; (c = r * 2 + size) < i; r = c)
+            {
                 if (c < i - size && cmp(basep + c, basep + c + size, opaque) <= 0)
                     c += size;
                 if (cmp(basep + r, basep + c, opaque) > 0)
@@ -503,15 +609,18 @@ static void heapsortx(void *base, size_t nmemb, size_t size, cmp_f cmp, void *op
 
 static inline void *med3(void *a, void *b, void *c, cmp_f cmp, void *opaque)
 {
-    return cmp(a, b, opaque) < 0 ?
-        (cmp(b, c, opaque) < 0 ? b : (cmp(a, c, opaque) < 0 ? c : a )) :
-        (cmp(b, c, opaque) > 0 ? b : (cmp(a, c, opaque) < 0 ? a : c ));
+    return cmp(a, b, opaque) < 0 ? (cmp(b, c, opaque) < 0 ? b : (cmp(a, c, opaque) < 0 ? c : a)) : (cmp(b, c, opaque) > 0 ? b : (cmp(a, c, opaque) < 0 ? a : c));
 }
 
 /* pointer based version with local stack and insertion sort threshhold */
 void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
 {
-    struct { uint8_t *base; size_t count; int depth; } stack[50], *sp = stack;
+    struct
+    {
+        uint8_t *base;
+        size_t count;
+        int depth;
+    } stack[50], *sp = stack;
     uint8_t *ptr, *pi, *pj, *plt, *pgt, *top, *m;
     size_t m4, i, lt, gt, span, span2;
     int c, depth;
@@ -526,14 +635,17 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
     sp->depth = 0;
     sp++;
 
-    while (sp > stack) {
+    while (sp > stack)
+    {
         sp--;
         ptr = sp->base;
         nmemb = sp->count;
         depth = sp->depth;
 
-        while (nmemb > 6) {
-            if (++depth > 50) {
+        while (nmemb > 6)
+        {
+            if (++depth > 50)
+            {
                 /* depth check to ensure worst case logarithmic time */
                 heapsortx(ptr, nmemb, size, cmp, opaque);
                 nmemb = 0;
@@ -543,14 +655,17 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
             /* should use median of 5 or 9? */
             m4 = (nmemb >> 2) * size;
             m = med3(ptr + m4, ptr + 2 * m4, ptr + 3 * m4, cmp, opaque);
-            swap(ptr, m, size);  /* move the pivot to the start or the array */
+            swap(ptr, m, size); /* move the pivot to the start or the array */
             i = lt = 1;
             pi = plt = ptr + size;
             gt = nmemb;
             pj = pgt = top = ptr + nmemb * size;
-            for (;;) {
-                while (pi < pj && (c = cmp(ptr, pi, opaque)) >= 0) {
-                    if (c == 0) {
+            for (;;)
+            {
+                while (pi < pj && (c = cmp(ptr, pi, opaque)) >= 0)
+                {
+                    if (c == 0)
+                    {
                         swap(plt, pi, size);
                         lt++;
                         plt += size;
@@ -558,8 +673,10 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
                     i++;
                     pi += size;
                 }
-                while (pi < (pj -= size) && (c = cmp(ptr, pj, opaque)) <= 0) {
-                    if (c == 0) {
+                while (pi < (pj -= size) && (c = cmp(ptr, pj, opaque)) <= 0)
+                {
+                    if (c == 0)
+                    {
                         gt--;
                         pgt -= size;
                         swap(pgt, pj, size);
@@ -605,14 +722,17 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
              */
             /* stack the larger segment and keep processing the smaller one
                to minimize stack use for pathological distributions */
-            if (lt > nmemb - gt) {
+            if (lt > nmemb - gt)
+            {
                 sp->base = ptr;
                 sp->count = lt;
                 sp->depth = depth;
                 sp++;
                 ptr = pgt;
                 nmemb -= gt;
-            } else {
+            }
+            else
+            {
                 sp->base = pgt;
                 sp->count = nmemb - gt;
                 sp->depth = depth;
@@ -621,7 +741,8 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
             }
         }
         /* Use insertion sort for small fragments */
-        for (pi = ptr + size, top = ptr + nmemb * size; pi < top; pi += size) {
+        for (pi = ptr + size, top = ptr + nmemb * size; pi < top; pi += size)
+        {
             for (pj = pi; pj > ptr && cmp(pj - size, pj, opaque) > 0; pj -= size)
                 swap(pj, pj - size, size);
         }
